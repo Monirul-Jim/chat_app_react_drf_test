@@ -1,10 +1,15 @@
 import { useState } from "react";
 import { useLoginMutation } from "../redux/api/authApi";
+import { useDispatch } from "react-redux";
+import { setUser } from "../redux/feature/authSlice";
 
+import verifyToken from "../redux/api/verifyToken";
 const LoginPage = () => {
+  const dispatch = useDispatch();
   const [login] = useLoginMutation();
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [errors, setErrors] = useState<{ [key: string]: string[] }>({});
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
@@ -18,13 +23,34 @@ const LoginPage = () => {
     });
   };
 
+  // const handleSubmit = async (e: React.FormEvent) => {
+  //   e.preventDefault();
+  //   try {
+  //     const response = await login(formData).unwrap();
+  //     console.log(response);
+  //     alert("User logged in successfully");
+  //     if (response.token) {
+  //       localStorage.setItem("authToken", response.token);
+  //     }
+  //   } catch (error: any) {
+  //     console.error("Login error:", error);
+  //     if (error.data) {
+  //       setErrors(error.data);
+  //     } else {
+  //       alert("Login failed");
+  //     }
+  //   }
+  // };
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       const response = await login(formData).unwrap();
-      console.log(response);
+
+      const user = verifyToken(response.access);
+      // Dispatch user information to the Redux store
+      dispatch(setUser({ user: user, token: response.access }));
+
       alert("User logged in successfully");
-      // Handle successful login, e.g., store token and user data
     } catch (error: any) {
       console.error("Login error:", error);
       if (error.data) {
@@ -34,6 +60,7 @@ const LoginPage = () => {
       }
     }
   };
+
   return (
     <form
       onSubmit={handleSubmit}
@@ -58,13 +85,24 @@ const LoginPage = () => {
           Password
         </label>
         <input
-          type="password"
+          type={showPassword ? "text" : "password"}
           name="password"
           value={formData.password}
           onChange={handleChange}
           className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300"
           required
         />
+      </div>
+      <div className="mb-4">
+        <label className="inline-flex items-center">
+          <input
+            type="checkbox"
+            checked={showPassword}
+            onChange={() => setShowPassword(!showPassword)} // Toggle showPassword state
+            className="form-checkbox"
+          />
+          <span className="ml-2 text-sm">Show Password</span>
+        </label>
       </div>
       <button
         type="submit"

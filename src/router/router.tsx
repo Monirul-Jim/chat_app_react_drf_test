@@ -6,16 +6,15 @@ const router = createBrowserRouter([
   {
     path: "/",
     element: <App />,
-    children: [
-      {
-        path: "login",
-        element: <LoginPage />,
-      },
-      {
-        path: "register",
-        element: <RegistrationPage />,
-      },
-    ],
+    children: [],
+  },
+  {
+    path: "login",
+    element: <LoginPage />,
+  },
+  {
+    path: "register",
+    element: <RegistrationPage />,
   },
 ]);
 export default router;
