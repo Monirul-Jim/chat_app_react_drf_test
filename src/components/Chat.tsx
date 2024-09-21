@@ -164,6 +164,7 @@ const Chat: React.FC = () => {
         <div className="w-1/3 bg-gray-100 p-4">
           <div className="flex items-center mb-4">
             <div className="flex-grow text-lg font-semibold">John Doe</div>
+            <a href="/login">Login</a>
           </div>
           {/* <form className="form">
             <button>
