@@ -7,7 +7,11 @@ import verifyToken from "../redux/api/verifyToken";
 const LoginPage = () => {
   const dispatch = useDispatch();
   const [login] = useLoginMutation();
-  const [formData, setFormData] = useState({ email: "", password: "" });
+  // const [formData, setFormData] = useState({ email: "", password: "" });
+  const [formData, setFormData] = useState({
+    email: "mohosin@gmail.com",
+    password: "123456789mo",
+  });
   const [errors, setErrors] = useState<{ [key: string]: string[] }>({});
   const [showPassword, setShowPassword] = useState(false);
 
@@ -23,33 +27,14 @@ const LoginPage = () => {
     });
   };
 
-  // const handleSubmit = async (e: React.FormEvent) => {
-  //   e.preventDefault();
-  //   try {
-  //     const response = await login(formData).unwrap();
-  //     console.log(response);
-  //     alert("User logged in successfully");
-  //     if (response.token) {
-  //       localStorage.setItem("authToken", response.token);
-  //     }
-  //   } catch (error: any) {
-  //     console.error("Login error:", error);
-  //     if (error.data) {
-  //       setErrors(error.data);
-  //     } else {
-  //       alert("Login failed");
-  //     }
-  //   }
-  // };
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       const response = await login(formData).unwrap();
 
       const user = verifyToken(response.access);
-      // Dispatch user information to the Redux store
       dispatch(setUser({ user: user, token: response.access }));
-
+      console.log(response);
       alert("User logged in successfully");
     } catch (error: any) {
       console.error("Login error:", error);
@@ -98,7 +83,7 @@ const LoginPage = () => {
           <input
             type="checkbox"
             checked={showPassword}
-            onChange={() => setShowPassword(!showPassword)} // Toggle showPassword state
+            onChange={() => setShowPassword(!showPassword)}
             className="form-checkbox"
           />
           <span className="ml-2 text-sm">Show Password</span>
