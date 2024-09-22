@@ -77,32 +77,45 @@
 
 // export default Chat;
 
-// this is second
-import React, {
+// this is third
+
+import {
   useEffect,
   useState,
   ChangeEvent,
   KeyboardEvent,
   MouseEvent,
+  useContext,
 } from "react";
 import "./chat.css";
+import { AuthContext } from "../AuthProvider/AuthContext";
 
 interface Message {
   sender: string;
   message: string;
 }
 
-const Chat: React.FC = () => {
+const Chat = () => {
+  const { user } = useContext(AuthContext);
+  console.log(user);
   const [messages, setMessages] = useState<Message[]>([]);
   const [messageInput, setMessageInput] = useState<string>("");
   const [chatSocket, setChatSocket] = useState<WebSocket | null>(null);
-  useEffect(() => {
+  const [reconnectInterval, setReconnectInterval] = useState<number | null>(
+    null
+  );
+
+  const connectWebSocket = () => {
     const url = `ws://localhost:8000/ws/socket-server/`;
     const chatMessage = new WebSocket(url);
 
     chatMessage.onopen = () => {
       console.log("WebSocket connection established in React");
       setChatSocket(chatMessage);
+      if (reconnectInterval) {
+        clearInterval(reconnectInterval); // Clear any existing reconnection attempt
+        setReconnectInterval(null); // Reset reconnect interval
+      }
     };
 
     chatMessage.onmessage = (e) => {
@@ -121,15 +134,29 @@ const Chat: React.FC = () => {
     };
 
     chatMessage.onclose = () => {
-      console.log("WebSocket connection closed");
+      console.log("WebSocket connection closed. Attempting to reconnect...");
+      // Attempt to reconnect after a delay
+      if (!reconnectInterval) {
+        setReconnectInterval(
+          setInterval(() => {
+            console.log("Reconnecting to WebSocket...");
+            connectWebSocket();
+          }, 5000)
+        ); // Reconnect every 5 seconds
+      }
     };
+  };
+
+  useEffect(() => {
+    connectWebSocket();
 
     return () => {
-      if (chatMessage.readyState === WebSocket.OPEN) {
-        chatMessage.close();
+      if (chatSocket && chatSocket.readyState === WebSocket.OPEN) {
+        chatSocket.close();
       }
     };
   }, []);
+
   const sendMessage = () => {
     if (chatSocket && chatSocket.readyState === WebSocket.OPEN) {
       const message: Message = {
@@ -158,6 +185,7 @@ const Chat: React.FC = () => {
     e.preventDefault();
     sendMessage();
   };
+
   return (
     <div>
       <div className="h-screen flex">
@@ -211,8 +239,8 @@ const Chat: React.FC = () => {
             </button>
           </form> */}
           <div className="bg-purple-200 p-3 rounded-lg mb-2 cursor-pointer">
-            <div className="font-semibold">Jane Doe 2</div>
-            <div className="text-sm">Hello Jane!</div>
+            <div className="font-semibold">Monirul</div>
+            <div className="text-sm">Jim</div>
           </div>
         </div>
 
