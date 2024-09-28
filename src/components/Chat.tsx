@@ -85,10 +85,12 @@ import {
   ChangeEvent,
   KeyboardEvent,
   MouseEvent,
-  useContext,
 } from "react";
 import "./chat.css";
-import { AuthContext } from "../AuthProvider/AuthContext";
+import { useAppSelector } from "../redux/feature/hooks";
+import { useCurrentUser } from "../redux/feature/authSlice";
+// import { useSelector } from "react-redux";
+// import { RootState } from "../redux/feature/store";
 
 interface Message {
   sender: string;
@@ -96,8 +98,9 @@ interface Message {
 }
 
 const Chat = () => {
-  const { user } = useContext(AuthContext);
-  console.log(user);
+  const user = useAppSelector(useCurrentUser);
+  console.log(user, "from chat app");
+
   const [messages, setMessages] = useState<Message[]>([]);
   const [messageInput, setMessageInput] = useState<string>("");
   const [chatSocket, setChatSocket] = useState<WebSocket | null>(null);

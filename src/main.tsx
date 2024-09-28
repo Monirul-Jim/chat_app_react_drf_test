@@ -1,4 +1,4 @@
-// import { StrictMode } from "react";
+import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css";
 import { Provider } from "react-redux";
@@ -9,16 +9,13 @@ import router from "./router/router.tsx";
 import { PersistGate } from "redux-persist/integration/react";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { AuthProvider } from "./AuthProvider/AuthContext.tsx";
 createRoot(document.getElementById("root")!).render(
-  // <StrictMode>
-  <Provider store={store}>
-    <PersistGate loading={null} persistor={persistor}>
-      <AuthProvider>
+  <StrictMode>
+    <Provider store={store}>
+      <PersistGate loading={null} persistor={persistor}>
         <RouterProvider router={router} />
-      </AuthProvider>
-    </PersistGate>
-    <ToastContainer />
-  </Provider>
-  // </StrictMode>
+      </PersistGate>
+      <ToastContainer />
+    </Provider>
+  </StrictMode>
 );
