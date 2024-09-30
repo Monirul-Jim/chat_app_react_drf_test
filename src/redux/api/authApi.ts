@@ -15,6 +15,17 @@ const authApi = baseApi.injectEndpoints({
         body: credentials,
       }),
     }),
+    addedSearchUser: builder.mutation({
+      query: (data) => ({
+        url: "/user/add-user/",
+        method: "POST",
+        body: data,
+      }),
+    }),
   }),
 });
-export const { useRegisterMutation, useLoginMutation } = authApi;
+export const {
+  useRegisterMutation,
+  useLoginMutation,
+  useAddedSearchUserMutation,
+} = authApi;

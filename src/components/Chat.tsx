@@ -9,6 +9,7 @@ import "./chat.css";
 import { useAppSelector } from "../redux/feature/hooks";
 import { useCurrentUser } from "../redux/feature/authSlice";
 import { useLazyGetAllLoginUserQuery } from "../redux/api/chatApi";
+import { useAddedSearchUserMutation } from "../redux/api/authApi";
 
 interface User {
   username: string;
@@ -25,6 +26,9 @@ interface Message {
 
 const Chat = () => {
   const user = useAppSelector(useCurrentUser);
+  const [triggerSearch, { data: users, isLoading, error }] =
+    useLazyGetAllLoginUserQuery();
+  const [addedSearchUser] = useAddedSearchUserMutation();
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [messageInput, setMessageInput] = useState<string>("");
@@ -33,8 +37,6 @@ const Chat = () => {
     null
   );
   const [searchTerm, setSearchTerm] = useState("");
-  const [triggerSearch, { data: users, isLoading, error }] =
-    useLazyGetAllLoginUserQuery();
   const handleSearch = () => {
     triggerSearch(searchTerm);
   };
@@ -127,6 +129,14 @@ const Chat = () => {
     e.preventDefault();
     sendMessage();
   };
+  const handleAddUser = async (user: User) => {
+    try {
+      const response = await addedSearchUser(user).unwrap();
+      console.log(response);
+    } catch (error) {
+      console.error("Failed to added user", error);
+    }
+  };
 
   return (
     <div>
@@ -174,12 +184,14 @@ const Chat = () => {
                     key={user.username}
                     className="flex justify-between items-center p-4 border-b last:border-b-0 hover:bg-gray-100 transition duration-200"
                   >
-                    <div>
-                      <p className="font-semibold">
-                        {user?.first_name} {user?.last_name}
-                      </p>
-                      <p className="text-gray-600">{user?.email}</p>
-                    </div>
+                    <button onClick={() => handleAddUser(user)}>
+                      <div>
+                        <p className="font-semibold">
+                          {user?.first_name} {user?.last_name}
+                        </p>
+                        <p className="text-gray-600">{user?.email}</p>
+                      </div>
+                    </button>
                   </li>
                 ))}
               </ul>
