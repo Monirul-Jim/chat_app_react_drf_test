@@ -8,11 +8,19 @@ import {
 import "./chat.css";
 import { useAppSelector } from "../redux/feature/hooks";
 import { useCurrentUser } from "../redux/feature/authSlice";
+import { useLazyGetAllLoginUserQuery } from "../redux/api/chatApi";
+
+interface User {
+  username: string;
+  email: string;
+  first_name: string;
+  last_name: string;
+}
 
 interface Message {
   sender: string;
   message: string;
-  timestamp: string; // Added timestamp field
+  timestamp: string;
 }
 
 const Chat = () => {
@@ -24,7 +32,12 @@ const Chat = () => {
   const [reconnectInterval, setReconnectInterval] = useState<number | null>(
     null
   );
-
+  const [searchTerm, setSearchTerm] = useState("");
+  const [triggerSearch, { data: users, isLoading, error }] =
+    useLazyGetAllLoginUserQuery();
+  const handleSearch = () => {
+    triggerSearch(searchTerm);
+  };
   const connectWebSocket = () => {
     const url = `ws://localhost:8000/ws/socket-server/`;
     const chatMessage = new WebSocket(url);
@@ -44,14 +57,14 @@ const Chat = () => {
         const newMessage: Message = {
           sender: data.sender,
           message: data.message,
-          timestamp: data.timestamp, // Include timestamp
+          timestamp: data.timestamp,
         };
         setMessages((prevMessages) => [...prevMessages, newMessage]);
       } else if (data.type === "history") {
         const existingMessages: Message[] = data.messages.map((msg: any) => ({
           sender: msg.sender,
           message: msg.message,
-          timestamp: msg.timestamp, // Include timestamp in history
+          timestamp: msg.timestamp,
         }));
         setMessages(existingMessages);
       }
@@ -125,6 +138,58 @@ const Chat = () => {
             </div>
             <a href="/login">Login</a>
           </div>
+          {/* here start search term */}
+          <div>
+            <div className="flex items-center border border-gray-300 rounded-md shadow-sm">
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Search users"
+                className="flex-1 px-4 py-2 text-gray-700 bg-white border-0 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
+              />
+              <button
+                onClick={handleSearch}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition duration-300"
+              >
+                Search
+              </button>
+            </div>
+
+            {isLoading && <p>Loading...</p>}
+
+            {error && (
+              <p>
+                Error:{" "}
+                {"status" in error
+                  ? `Status: ${error.status}`
+                  : error.message || "An error occurred"}
+              </p>
+            )}
+
+            {users && users.length > 0 ? (
+              <ul className="mt-4 bg-white rounded-md shadow-md">
+                {users.map((user: User) => (
+                  <li
+                    key={user.username}
+                    className="flex justify-between items-center p-4 border-b last:border-b-0 hover:bg-gray-100 transition duration-200"
+                  >
+                    <div>
+                      <p className="font-semibold">
+                        {user?.first_name} {user?.last_name}
+                      </p>
+                      <p className="text-gray-600">{user?.email}</p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              searchTerm &&
+              !isLoading && <p className="mt-2 text-gray-500">No users found</p>
+            )}
+          </div>
+
+          {/* here end search term */}
           <div className="bg-purple-200 p-3 rounded-lg mb-2 cursor-pointer">
             <div className="font-semibold">{user?.username}</div>
             <div className="text-sm">Jim</div>
