@@ -15,6 +15,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import VideoButton from "../assets/video_call_icon.png";
 import AudioButton from "../assets/audio_call.png";
+import VideoCallModal from "./VideoCallModal";
 interface User {
   username: string;
   email: string;
@@ -44,6 +45,15 @@ const Chat = () => {
     null
   );
   const [searchTerm, setSearchTerm] = useState("");
+  const [isModalOpen, setIsModalOpen] = useState(false); // State to handle modal visibility
+
+  const handleVideoCallClick = () => {
+    setIsModalOpen(true); // Open the modal when the video button is clicked
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false); // Close the modal
+  };
 
   const handleSearch = () => {
     triggerSearch(searchTerm);
@@ -300,7 +310,7 @@ const Chat = () => {
             <div className="flex space-x-2 mr-10 gap-6">
               {" "}
               {/* Adjust margin-right to 50px */}
-              <button>
+              <button onClick={handleVideoCallClick}>
                 <img src={VideoButton} alt="Video Call Button" />
               </button>
               <button>
@@ -308,29 +318,8 @@ const Chat = () => {
               </button>
             </div>
           </div>
+          {isModalOpen && <VideoCallModal closeModal={closeModal} />}
 
-          {/* <div className="flex-grow p-4 overflow-auto">
-            {messages.map((msg, index) => (
-              <div
-                key={index}
-                className={`flex ${
-                  msg.sender === user?.username
-                    ? "justify-end"
-                    : "justify-start"
-                } mb-4`}
-              >
-                <div
-                  className={`bg-purple-500 text-white rounded-lg p-3 max-w-xs`}
-                >
-                  {" "}
-                  {msg.message}
-                </div>
-                <span className="ml-2 text-xs text-gray-500">
-                  {new Date(msg.timestamp).toLocaleTimeString()}
-                </span>{" "}
-              </div>
-            ))}
-          </div> */}
           <div className="flex-grow p-4 overflow-auto">
             {messages.map((msg, index) => (
               <div
@@ -406,3 +395,5 @@ const Chat = () => {
 };
 
 export default Chat;
+
+// here start second code
