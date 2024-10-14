@@ -10,10 +10,12 @@ import {
   SubmitHandler,
   FieldError,
 } from "react-hook-form";
+import { useNavigate } from "react-router-dom";
 
 const LoginPage = () => {
   const dispatch = useDispatch();
   const [login] = useLoginMutation();
+  const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const {
     register,
@@ -44,6 +46,7 @@ const LoginPage = () => {
       // console.log(response, "login");
       // dispatch(setUser({ user: user, token: response.access }));
       toast.success("User logged in successfully!");
+      navigate("/");
     } catch (error: any) {
       console.log(error);
 

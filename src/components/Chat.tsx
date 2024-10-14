@@ -5,12 +5,16 @@ import {
   KeyboardEvent,
   MouseEvent,
 } from "react";
-import "./chat.css";
-import { useAppSelector } from "../redux/feature/hooks";
-import { useCurrentUser } from "../redux/feature/authSlice";
+import { useAppDispatch, useAppSelector } from "../redux/feature/hooks";
+import { logout, useCurrentUser } from "../redux/feature/authSlice";
 import { useLazyGetAllLoginUserQuery } from "../redux/api/chatApi";
-import { useAddedSearchUserMutation } from "../redux/api/authApi";
-
+import {
+  useAddedSearchUserMutation,
+  useLogoutMutation,
+} from "../redux/api/authApi";
+import { useNavigate } from "react-router-dom";
+import VideoButton from "../assets/video_call_icon.png";
+import AudioButton from "../assets/audio_call.png";
 interface User {
   username: string;
   email: string;
@@ -29,7 +33,10 @@ const Chat = () => {
   const [triggerSearch, { data: users, isLoading, error }] =
     useLazyGetAllLoginUserQuery();
   const [addedSearchUser] = useAddedSearchUserMutation();
-
+  const dispatch = useAppDispatch();
+  const [logoutUser] = useLogoutMutation();
+  const navigate = useNavigate();
+  // console.log(getUser);
   const [messages, setMessages] = useState<Message[]>([]);
   const [messageInput, setMessageInput] = useState<string>("");
   const [chatSocket, setChatSocket] = useState<WebSocket | null>(null);
@@ -37,9 +44,11 @@ const Chat = () => {
     null
   );
   const [searchTerm, setSearchTerm] = useState("");
+
   const handleSearch = () => {
     triggerSearch(searchTerm);
   };
+
   const connectWebSocket = () => {
     const url = `ws://localhost:8000/ws/socket-server/`;
     const chatMessage = new WebSocket(url);
@@ -129,12 +138,82 @@ const Chat = () => {
     e.preventDefault();
     sendMessage();
   };
+
   const handleAddUser = async (user: User) => {
     try {
-      const response = await addedSearchUser(user).unwrap();
-      console.log(response);
+      const response = await addedSearchUser(user);
     } catch (error) {
       console.error("Failed to added user", error);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logoutUser();
+      dispatch(logout());
+      navigate("/login");
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
+  };
+  // send voice message
+  const [isRecording, setIsRecording] = useState(false);
+  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(
+    null
+  );
+  const [audioChunks, setAudioChunks] = useState<Blob[]>([]);
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      const tempAudioChunks: Blob[] = []; // Temporary array for holding the chunks
+
+      recorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          tempAudioChunks.push(event.data); // Push data into temporary array
+        }
+      };
+
+      recorder.onstop = () => {
+        if (tempAudioChunks.length > 0) {
+          const audioBlob = new Blob(tempAudioChunks, { type: "audio/wav" });
+          sendVoiceMessage(audioBlob);
+        } else {
+          console.error("No audio data captured.");
+        }
+        setAudioChunks([]); // Clear chunks after sending
+      };
+
+      recorder.start();
+      setMediaRecorder(recorder);
+      setIsRecording(true);
+    } catch (error) {
+      console.error("Error starting recording:", error);
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorder) {
+      mediaRecorder.stop();
+      setIsRecording(false);
+    }
+  };
+
+  const sendVoiceMessage = (audioBlob: Blob) => {
+    if (chatSocket && chatSocket.readyState === WebSocket.OPEN) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const message = {
+          sender: user?.username || "Anonymous",
+          message: reader.result, // This is a base64 encoded string
+          timestamp: new Date().toLocaleTimeString(),
+        };
+        chatSocket.send(JSON.stringify(message));
+      };
+      reader.readAsDataURL(audioBlob); // Read the audio file as a base64 encoded string
+    } else {
+      console.error("WebSocket connection is not open.");
     }
   };
 
@@ -146,7 +225,11 @@ const Chat = () => {
             <div className="flex-grow text-lg font-semibold">
               {user?.username}
             </div>
-            <a href="/login">Login</a>
+            {user ? (
+              <button onClick={handleLogout}>Logout</button>
+            ) : (
+              <a href="/login">Login</a>
+            )}
           </div>
           {/* here start search term */}
           <div>
@@ -209,11 +292,24 @@ const Chat = () => {
         </div>
 
         <div className="flex-grow flex flex-col">
-          <div className="p-4 border-b">
-            <div className="text-lg font-semibold">Chat</div>
-            <div className="text-sm text-gray-500">Current Conversation</div>
+          <div className="p-4 border-b flex justify-between items-center">
+            <div>
+              <div className="text-lg font-semibold">{user?.username}</div>
+              <div className="text-sm text-gray-500">online</div>
+            </div>
+            <div className="flex space-x-2 mr-10 gap-6">
+              {" "}
+              {/* Adjust margin-right to 50px */}
+              <button>
+                <img src={VideoButton} alt="Video Call Button" />
+              </button>
+              <button>
+                <img src={AudioButton} alt="Audio Call Button" />
+              </button>
+            </div>
           </div>
-          <div className="flex-grow p-4 overflow-auto">
+
+          {/* <div className="flex-grow p-4 overflow-auto">
             {messages.map((msg, index) => (
               <div
                 key={index}
@@ -234,6 +330,39 @@ const Chat = () => {
                 </span>{" "}
               </div>
             ))}
+          </div> */}
+          <div className="flex-grow p-4 overflow-auto">
+            {messages.map((msg, index) => (
+              <div
+                key={index}
+                className={`flex ${
+                  msg.sender === user?.username
+                    ? "justify-end"
+                    : "justify-start"
+                } mb-4`}
+              >
+                {msg.message.startsWith("data:audio/") ? (
+                  // Render an audio player for audio messages
+                  <audio
+                    controls
+                    className="bg-purple-500 text-white rounded-lg p-3 max-w-xs"
+                  >
+                    <source src={msg.message} type="audio/wav" />
+                    Your browser does not support the audio element.
+                  </audio>
+                ) : (
+                  // Render text message
+                  <div
+                    className={`bg-purple-500 text-white rounded-lg p-3 max-w-xs`}
+                  >
+                    {msg.message}
+                  </div>
+                )}
+                <span className="ml-2 text-xs text-gray-500">
+                  {new Date(msg.timestamp).toLocaleTimeString()}
+                </span>
+              </div>
+            ))}
           </div>
 
           <div className="p-4 border-t flex items-center">
@@ -252,8 +381,22 @@ const Chat = () => {
             >
               Send
             </button>
-            <button className="text-purple-600 hover:text-purple-800 text-2xl">
-              📎
+            {/* <button className="text-purple-600 hover:text-purple-800 ">
+              Voice Send
+            </button> */}
+            <button
+              onClick={() => {
+                if (isRecording) {
+                  stopRecording();
+                } else {
+                  startRecording();
+                }
+              }}
+              className={`text-purple-600 hover:text-purple-800 ${
+                isRecording ? "bg-red-500" : ""
+              }`}
+            >
+              {isRecording ? "Stop Recording" : "Voice Send"}
             </button>
           </div>
         </div>

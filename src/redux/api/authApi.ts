@@ -22,10 +22,24 @@ const authApi = baseApi.injectEndpoints({
         body: data,
       }),
     }),
+    logout: builder.mutation<void, void>({
+      query: () => ({
+        url: "/user/logout/",
+        method: "POST",
+      }),
+    }),
+    getAddedUsers: builder.query({
+      query: () => ({
+        url: "/user/get-added-users/",
+        method: "GET",
+      }),
+    }),
   }),
 });
 export const {
   useRegisterMutation,
   useLoginMutation,
   useAddedSearchUserMutation,
+  useLogoutMutation,
+  useGetAddedUsersQuery,
 } = authApi;

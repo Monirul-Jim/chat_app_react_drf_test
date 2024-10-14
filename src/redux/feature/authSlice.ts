@@ -16,8 +16,8 @@ export type TUser = {
   exp: number;
   iat: number;
   user_id: number;
-  username: string; // Add username
-  email: string; // Add email
+  username: string;
+  email: string;
 };
 
 type TAuthState = {
