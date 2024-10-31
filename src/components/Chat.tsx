@@ -10,12 +10,12 @@ import { logout, useCurrentUser } from "../redux/feature/authSlice";
 import { useLazyGetAllLoginUserQuery } from "../redux/api/chatApi";
 import {
   useAddedSearchUserMutation,
+  useGetAddedUsersQuery,
   useLogoutMutation,
 } from "../redux/api/authApi";
 import { useNavigate } from "react-router-dom";
 import VideoButton from "../assets/video_call_icon.png";
 import AudioButton from "../assets/audio_call.png";
-import VideoCallModal from "./VideoCallModal";
 interface User {
   username: string;
   email: string;
@@ -45,16 +45,12 @@ const Chat = () => {
     null
   );
   const [searchTerm, setSearchTerm] = useState("");
-  const [isModalOpen, setIsModalOpen] = useState(false); // State to handle modal visibility
-
-  const handleVideoCallClick = () => {
-    setIsModalOpen(true); // Open the modal when the video button is clicked
-  };
-
-  const closeModal = () => {
-    setIsModalOpen(false); // Close the modal
-  };
-
+  const {
+    data: getUserData,
+    isLoading: userIsLoading,
+    isError,
+  } = useGetAddedUsersQuery(null);
+  console.log(getUserData);
   const handleSearch = () => {
     triggerSearch(searchTerm);
   };
@@ -226,6 +222,9 @@ const Chat = () => {
       console.error("WebSocket connection is not open.");
     }
   };
+  if (userIsLoading) {
+    <p>User loading....</p>;
+  }
 
   return (
     <div>
@@ -295,9 +294,23 @@ const Chat = () => {
           </div>
 
           {/* here end search term */}
-          <div className="bg-purple-200 p-3 rounded-lg mb-2 cursor-pointer">
-            <div className="font-semibold">{user?.username}</div>
-            <div className="text-sm">Jim</div>
+          <div>
+            {getUserData && getUserData.length > 0 ? (
+              getUserData?.map((user: User) => (
+                <div
+                  key={user.username}
+                  className="bg-purple-200 p-3 rounded-lg mb-2 cursor-pointer"
+                >
+                  <div className="font-semibold">{user?.username}</div>
+                  <div className="text-sm">
+                    {user?.first_name} {user?.last_name}
+                  </div>
+                  <div className="text-sm">{user?.email}</div>
+                </div>
+              ))
+            ) : (
+              <p className="text-gray-500">No users found</p>
+            )}
           </div>
         </div>
 
@@ -310,7 +323,7 @@ const Chat = () => {
             <div className="flex space-x-2 mr-10 gap-6">
               {" "}
               {/* Adjust margin-right to 50px */}
-              <button onClick={handleVideoCallClick}>
+              <button>
                 <img src={VideoButton} alt="Video Call Button" />
               </button>
               <button>
@@ -318,7 +331,6 @@ const Chat = () => {
               </button>
             </div>
           </div>
-          {isModalOpen && <VideoCallModal closeModal={closeModal} />}
 
           <div className="flex-grow p-4 overflow-auto">
             {messages.map((msg, index) => (
