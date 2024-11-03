@@ -16,6 +16,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import VideoButton from "../assets/video_call_icon.png";
 import AudioButton from "../assets/audio_call.png";
+import { toast } from "react-toastify";
 interface User {
   username: string;
   email: string;
@@ -31,8 +32,10 @@ interface Message {
 
 const Chat = () => {
   const user = useAppSelector(useCurrentUser);
+
   const [triggerSearch, { data: users, isLoading, error }] =
     useLazyGetAllLoginUserQuery();
+
   const [addedSearchUser] = useAddedSearchUserMutation();
   const dispatch = useAppDispatch();
   const [logoutUser] = useLogoutMutation();
@@ -50,7 +53,6 @@ const Chat = () => {
     isLoading: userIsLoading,
     isError,
   } = useGetAddedUsersQuery(null);
-  console.log(getUserData);
   const handleSearch = () => {
     triggerSearch(searchTerm);
   };
@@ -144,12 +146,19 @@ const Chat = () => {
     e.preventDefault();
     sendMessage();
   };
-
-  const handleAddUser = async (user: User) => {
+  const handleAddUser = async (userToAdd: User) => {
     try {
-      const response = await addedSearchUser(user);
+      const userData = {
+        username: userToAdd.username,
+        first_name: userToAdd.first_name,
+        last_name: userToAdd.last_name,
+        email: userToAdd.email,
+        added_by: user.user_id,
+      };
+      await addedSearchUser(userData).unwrap();
+      toast.success("Successfully added user");
     } catch (error) {
-      console.error("Failed to added user", error);
+      console.error("Failed to add user", error);
     }
   };
 
@@ -271,17 +280,17 @@ const Chat = () => {
 
             {users && users.length > 0 ? (
               <ul className="mt-4 bg-white rounded-md shadow-md">
-                {users.map((user: User) => (
+                {users.map((userToAdd: User) => (
                   <li
-                    key={user.username}
+                    key={userToAdd.username}
                     className="flex justify-between items-center p-4 border-b last:border-b-0 hover:bg-gray-100 transition duration-200"
                   >
-                    <button onClick={() => handleAddUser(user)}>
+                    <button onClick={() => handleAddUser(userToAdd)}>
                       <div>
                         <p className="font-semibold">
-                          {user?.first_name} {user?.last_name}
+                          {userToAdd?.first_name} {userToAdd?.last_name}
                         </p>
-                        <p className="text-gray-600">{user?.email}</p>
+                        <p className="text-gray-600">{userToAdd?.email}</p>
                       </div>
                     </button>
                   </li>
