@@ -53,6 +53,7 @@ const Chat = () => {
     isLoading: userIsLoading,
     isError,
   } = useGetAddedUsersQuery(null);
+
   const handleSearch = () => {
     triggerSearch(searchTerm);
   };
@@ -157,8 +158,17 @@ const Chat = () => {
       };
       await addedSearchUser(userData).unwrap();
       toast.success("Successfully added user");
-    } catch (error) {
+    } catch (error: any) {
+      // Handle the error
       console.error("Failed to add user", error);
+      if (
+        error.status === 400 &&
+        error.data?.error === "You have already added this user."
+      ) {
+        toast.info("You have already added this user.");
+      } else {
+        toast.error("Failed to add user. Please try again.");
+      }
     }
   };
 
